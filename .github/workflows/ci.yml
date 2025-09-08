@@ -62,6 +62,7 @@ jobs:
             -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
             -Dsonar.login=${{ secrets.SONAR_TOKEN }} \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+            -Dsonar.branch.name=${{ github.ref_name }}  
 
       # Pull Request 事件的 SonarQube 分析, 只分析變更的程式碼，在 PR 中顯示品質建議，不會分析所有程式碼
       - name: SonarQube Analysis (Pull Request)
