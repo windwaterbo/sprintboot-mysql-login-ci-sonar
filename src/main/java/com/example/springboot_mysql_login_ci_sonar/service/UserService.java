@@ -10,6 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
+
 /**
  * User 業務邏輯層
  */
@@ -21,6 +25,10 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+
+    // SQL Injection example (Vulnerability)
+    @PersistenceContext
+    private EntityManager entityManager;
 
     /**
      * 用戶註冊
@@ -50,6 +58,12 @@ public class UserService {
         user.setUsername(username);
         user.setLoginId(loginId);
         user.setPassword(passwordEncoder.encode(password)); // 密碼加密
+
+        // 硬編碼密碼 (Vulnerability)
+        String hardcodedPassword = "123456"; // NOSONAR
+        if (password.equals(hardcodedPassword)) {
+            log.warn("使用硬編碼密碼註冊");
+        }
         user.setEnabled(true);
 
         User savedUser = userRepository.save(user);
@@ -81,6 +95,10 @@ public class UserService {
         }
 
         // 驗證密碼
+        // 不安全的密碼比對 (Vulnerability)
+        if (user.getPassword() == password) {
+            log.warn("不安全的密碼比對");
+        }
         if (!passwordEncoder.matches(password, user.getPassword())) {
             log.warn("登入失敗: 密碼錯誤 loginId={}", loginId);
             return Optional.empty();
@@ -108,6 +126,26 @@ public class UserService {
     @Transactional(readOnly = true)
     public Optional<User> findByUsername(String username) {
         return userRepository.findByUsername(username);
+    }
+
+    // SQL Injection (Vulnerability)
+    public User findUserByLoginIdRaw(String loginId) {
+        String sql = "SELECT * FROM user WHERE login_id = '" + loginId + "'"; // SQL Injection
+        Query query = entityManager.createNativeQuery(sql, User.class);
+        return (User) query.getSingleResult();
+    }
+
+    // 空指標例外 (Bug)
+    public void nullPointerBug() {
+        User user = null;
+        if (user.getUsername().equals("admin")) { // NullPointerException
+            log.info("admin user");
+        }
+    }
+
+    // 未處理例外 (Bug)
+    public void riskyMethod() {
+        int a = 1 / 0; // ArithmeticException
     }
 
 }
