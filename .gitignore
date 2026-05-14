@@ -76,3 +76,4 @@ jacoco.exec
 *.pid.lock
 .nyc_output
 coverage/
+/target/
